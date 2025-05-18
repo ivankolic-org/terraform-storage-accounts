@@ -1,0 +1,78 @@
+name: Terraform Workflow
+
+on:
+  workflow_dispatch: # Manually trigger this workflow
+    inputs:
+      action:
+        description: 'Terraform action to perform (plan, apply, destroy). Default is plan.'
+        required: false
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+        default: 'plan'
+  push:
+    branches:
+      - 'feature/**' # Trigger on push to branches like feature/new-thing
+
+jobs:
+  terraform_manual_actions: # Renamed from 'terraform' for clarity
+    runs-on: ubuntu-latest
+    environment: development # As per user's previous change
+    if: github.event_name == 'workflow_dispatch' # Only run this job for manual dispatch
+    env: # Define common environment variables for Azure auth for this job
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: terraform init # ARM_ env vars will be used by Azure provider
+
+      - name: Terraform Validate
+        run: terraform validate # Usually doesn't need auth, but init might have configured provider
+
+      - name: Terraform Plan
+        if: github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply'
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply (Manual)
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy (Manual)
+        if: github.event.inputs.action == 'destroy'
+        run: terraform destroy -auto-approve
+
+  validate_on_feature_push:
+    name: Validate on Feature Branch Push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') # Only run for push to feature/*
+    env: # Define common environment variables for Azure auth for this job, if init needs them
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: terraform init # ARM_ env vars might be needed by Azure provider during init
+
+      - name: Terraform Validate
+        run: terraform validate
