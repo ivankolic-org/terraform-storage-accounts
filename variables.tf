@@ -9,3 +9,8 @@ variable storage_account_name {
 variable location {
     default = "westeurope"
 }
+variable "ARM_CLIENT_ID" {
+  description = "Azure Client ID"
+  type        = string
+  # No default; set via TF_VAR_ARM_CLIENT_ID environment variable or tfvars file
+}

@@ -16,3 +16,9 @@ resource "azurerm_storage_container" "terraform-storage-accounts" {
   storage_account_name  = azurerm_storage_account.terraform-storage-accounts.name
   container_access_type = "private"
 }
+
+resource "azurerm_role_assignment" "sp_tfstate_blob_access" {
+  principal_id         = data.azuread_service_principal.terraform.object_id
+  role_definition_name = "Storage Blob Data Contributor"
+  scope                = azurerm_storage_account.terraform-storage-accounts.id
+}
