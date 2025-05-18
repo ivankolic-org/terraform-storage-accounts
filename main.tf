@@ -12,7 +12,7 @@ resource "azurerm_storage_account" "terraform-storage-accounts" {
 }
 
 resource "azurerm_storage_container" "terraform-storage-accounts" {
-  name                  = "terraform-tfstate"
+  name                  = "terraform-state"
   storage_account_name  = azurerm_storage_account.terraform-storage-accounts.name
   container_access_type = "private"
 }
