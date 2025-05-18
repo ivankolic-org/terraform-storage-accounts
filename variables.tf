@@ -1,5 +1,5 @@
 variable resource_group_name {
-    default = "tfhylasticx"
+    default = "rg-tf-hylastix"
 }
 
 variable storage_account_name {
